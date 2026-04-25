@@ -1,7 +1,13 @@
 [project]
 name = "vital-care"
 version = "0.1.0"
-description = "Add your description here"
+description = "Vital AI — Agentic AI healthcare navigation assistant"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
+
+[project.scripts]
+vital-ai = "main:main"
+
+[tool.uv]
+package = false
