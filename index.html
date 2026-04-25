@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CareCompass - Vital AI</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enables standard dark mode toggling
+        }
+    </script>
+    <style>
+        /* Hide default scrollbar for sleek UI */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Custom Premium Animations */
+        @keyframes modalIn {
+            0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-modal { animation: modalIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes fadeBg {
+            0% { opacity: 0; backdrop-filter: blur(0px); }
+            100% { opacity: 1; backdrop-filter: blur(24px); }
+        }
+        .animate-bg { animation: fadeBg 0.4s ease-out forwards; }
+    </style>
+</head>
+<body class="transition-colors duration-1000 ease-in-out font-sans bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 min-h-[100dvh] w-full relative overflow-hidden flex items-center justify-center sm:p-6 p-0">
+
+    <!-- 1. DYNAMIC AMBIENT BACKGROUND BLOBS -->
+    <div class="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] rounded-full mix-blend-screen filter blur-[100px] sm:blur-[120px] opacity-60 transition-colors duration-1000 ease-in-out transform-gpu bg-teal-200 dark:bg-indigo-900 pointer-events-none"></div>
+    <div class="absolute bottom-[-10%] right-[-20%] w-[50rem] h-[50rem] rounded-full mix-blend-screen filter blur-[120px] sm:blur-[150px] opacity-60 transition-colors duration-1000 ease-in-out transform-gpu bg-emerald-100 dark:bg-purple-900 pointer-events-none"></div>
+
+    <!-- 2. MAIN ULTRA-FROSTED GLASS CONTAINER -->
+    <div class="relative w-full max-w-4xl h-[100dvh] sm:h-[90vh] rounded-none sm:rounded-[2.5rem] flex flex-col transition-all duration-700 z-10 backdrop-blur-2xl bg-white/40 dark:bg-slate-900/40 border sm:border-white/60 dark:border-white/5 shadow-[0_30px_60px_rgba(13,148,136,0.15)] dark:shadow-[0_30px_60px_rgba(0,0,0,0.6)] sm:ring-1 ring-white/50 dark:ring-white/10">
+        
+        <!-- HEADER -->
+        <header class="px-4 sm:px-8 py-3 sm:py-5 flex items-center justify-between z-20 shrink-0">
+            
+            <!-- Logo Section -->
+            <div class="flex items-center gap-2 sm:gap-3 group cursor-pointer shrink-0">
+                <div class="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 group-hover:scale-105 bg-gradient-to-br from-teal-400 to-emerald-500 dark:from-indigo-400 dark:to-purple-600 shadow-teal-500/30 dark:shadow-purple-900/50">
+                    <!-- Medical SVG -->
+                    <svg id="logo-medical" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="block dark:hidden"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    <!-- Mental SVG -->
+                    <svg id="logo-mental" width="22" height="22" viewBox="0 0 24 24" fill="white" fill-opacity="0.2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+                </div>
+                <div class="flex-col hidden min-[380px]:flex">
+                    <span class="font-extrabold text-lg sm:text-xl tracking-tight leading-none text-slate-800 dark:text-white">CareCompass</span>
+                    <span class="text-[0.65rem] font-bold uppercase tracking-widest mt-1 opacity-70 hidden sm:block text-teal-600 dark:text-indigo-300">
+                        <span id="header-subtitle" class="block dark:hidden">Clinical Triage</span>
+                        <span class="hidden dark:block">Mental Wellbeing</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- DYNAMIC SQUIRCLE TOGGLE -->
+            <div class="relative flex items-center rounded-2xl w-48 sm:w-72 h-10 sm:h-12 transition-colors duration-500 shadow-inner bg-slate-200/50 dark:bg-black/40 shadow-slate-300/50 dark:shadow-black/50">
+                <!-- Sliding Thumb -->
+                <div class="absolute left-0 top-0 w-1/2 h-full p-1 sm:p-1.5 transition-transform duration-500 ease-out transform-gpu translate-x-0 dark:translate-x-full">
+                    <div class="w-full h-full rounded-[0.65rem] sm:rounded-xl shadow-md border transition-colors duration-500 bg-white dark:bg-slate-800 border-slate-100 dark:border-white/10 shadow-teal-900/5 dark:shadow-black"></div>
+                </div>
+                <button type="button" onclick="setMode(false)" class="relative z-10 w-1/2 h-full flex items-center justify-center text-[0.65rem] sm:text-xs font-bold tracking-wide transition-colors duration-300 text-teal-700 dark:text-slate-500 dark:hover:text-slate-300">MEDICAL</button>
+                <button type="button" onclick="setMode(true)" class="relative z-10 w-1/2 h-full flex items-center justify-center text-[0.65rem] sm:text-xs font-bold tracking-wide transition-colors duration-300 text-slate-500 hover:text-slate-700 dark:text-indigo-300">MIND</button>
+            </div>
+
+            <!-- User Icon -->
+            <button class="w-10 h-10 sm:w-11 sm:h-11 rounded-[0.8rem] sm:rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 hover:scale-105 bg-white/60 dark:bg-white/10 border border-white/80 dark:border-white/10 text-slate-600 dark:text-white shadow-sm dark:hover:bg-white/20">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </button>
+        </header>
+
+        <!-- 3. CHAT AREA -->
+        <div id="chat-box" class="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8 scroll-smooth z-10 no-scrollbar">
+            
+            <!-- Typing Indicator (Hidden by default) -->
+            <div id="typing-indicator" class="hidden w-full justify-start">
+                <div class="px-4 sm:px-5 py-3 sm:py-4 rounded-3xl rounded-tl-sm backdrop-blur-xl flex items-center gap-2 bg-white/70 dark:bg-slate-800/60 border border-white dark:border-white/10 shadow-sm">
+                    <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-bounce bg-teal-500 dark:bg-indigo-400" style="animation-delay: 0ms"></div>
+                    <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-bounce bg-teal-500 dark:bg-indigo-400" style="animation-delay: 150ms"></div>
+                    <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-bounce bg-teal-500 dark:bg-indigo-400" style="animation-delay: 300ms"></div>
+                </div>
+            </div>
+            <!-- Chat messages injected here by JS -->
+        </div>
+
+        <!-- 4. FLOATING INPUT DOCK -->
+        <div class="p-4 sm:p-6 z-20">
+            <!-- Quick Action Chips -->
+            <div class="flex gap-2 sm:gap-3 overflow-x-auto pb-3 sm:pb-4 mb-1 no-scrollbar mask-fade-edges">
+                <button onclick="insertText('Decode a prescription')" class="whitespace-nowrap px-4 sm:px-5 py-1.5 sm:py-2 rounded-[0.8rem] sm:rounded-xl text-[0.7rem] sm:text-xs font-semibold backdrop-blur-md transition-all duration-300 hover:scale-[1.02] active:scale-95 border border-white/60 dark:border-white/10 text-slate-600 dark:text-indigo-200 bg-white/40 dark:bg-white/5 hover:bg-white/70 dark:hover:bg-white/10 hover:border-teal-300 dark:hover:border-indigo-400/50 shadow-sm">Decode a prescription</button>
+                <button onclick="insertText('I am having a panic attack')" class="whitespace-nowrap px-4 sm:px-5 py-1.5 sm:py-2 rounded-[0.8rem] sm:rounded-xl text-[0.7rem] sm:text-xs font-semibold backdrop-blur-md transition-all duration-300 hover:scale-[1.02] active:scale-95 border border-white/60 dark:border-white/10 text-slate-600 dark:text-indigo-200 bg-white/40 dark:bg-white/5 hover:bg-white/70 dark:hover:bg-white/10 hover:border-teal-300 dark:hover:border-indigo-400/50 shadow-sm">I am having a panic attack</button>
+                <button onclick="insertText('Check my symptoms')" class="whitespace-nowrap px-4 sm:px-5 py-1.5 sm:py-2 rounded-[0.8rem] sm:rounded-xl text-[0.7rem] sm:text-xs font-semibold backdrop-blur-md transition-all duration-300 hover:scale-[1.02] active:scale-95 border border-white/60 dark:border-white/10 text-slate-600 dark:text-indigo-200 bg-white/40 dark:bg-white/5 hover:bg-white/70 dark:hover:bg-white/10 hover:border-teal-300 dark:hover:border-indigo-400/50 shadow-sm">Check my symptoms</button>
+            </div>
+
+            <!-- Input Bar -->
+            <form id="chat-form" class="flex items-end gap-2 sm:gap-3 relative rounded-[1.5rem] sm:rounded-[2rem] p-1.5 sm:p-2 transition-colors duration-500 shadow-2xl bg-white/80 dark:bg-slate-900/80 border border-white dark:border-white/10 shadow-teal-900/10 dark:shadow-black/50 backdrop-blur-xl">
+                
+                <button type="button" class="p-2.5 sm:p-3 rounded-full flex-shrink-0 transition-all duration-300 hover:rotate-12 text-teal-600 dark:text-indigo-300 hover:bg-teal-50 dark:hover:bg-indigo-500/20">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rotate-[-45deg]"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                </button>
+                
+                <textarea id="chat-input" placeholder="Describe symptoms or ask..." class="w-full max-h-32 min-h-[44px] sm:min-h-[50px] py-3 px-1 sm:px-2 bg-transparent outline-none resize-none text-[0.85rem] sm:text-[0.95rem] text-slate-800 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400" rows="1"></textarea>
+
+                <button type="submit" id="send-btn" disabled class="p-3 sm:p-3.5 rounded-full flex-shrink-0 flex items-center justify-center transition-all duration-300 disabled:opacity-40 disabled:scale-95 hover:scale-105 active:scale-95 bg-teal-500 dark:bg-indigo-500 hover:bg-teal-400 dark:hover:bg-indigo-400 text-white shadow-[0_0_20px_rgba(20,184,166,0.4)] dark:shadow-[0_0_20px_rgba(99,102,241,0.4)]">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="translate-x-0.5 translate-y-px"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. STUNNING EMERGENCY MODAL -->
+    <div id="emergency-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/80 animate-bg"></div>
+        <div class="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 max-w-lg w-full relative overflow-hidden shadow-[0_0_100px_rgba(220,38,38,0.4)] animate-modal z-10 border border-white/20">
+            <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-500 via-red-600 to-red-500"></div>
+            
+            <div class="flex flex-col items-center text-center mt-2">
+                <div class="relative mb-6 sm:mb-8">
+                    <div class="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-20 scale-150"></div>
+                    <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl sm:rounded-[2rem] bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center relative shadow-inner border border-red-200">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+                    </div>
+                </div>
+                
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3 sm:mb-4 tracking-tight">Medical Emergency</h2>
+                <p class="text-slate-600 text-[0.85rem] sm:text-[0.95rem] mb-8 sm:mb-10 leading-relaxed max-w-sm">
+                    Based on the keywords you typed, you may be experiencing a critical medical event. <strong class="text-slate-800">Please seek immediate professional help.</strong> Do not rely on AI for emergencies.
+                </p>
+
+                <div class="w-full space-y-3 sm:space-y-4">
+                    <a href="tel:911" class="group w-full flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white p-3.5 sm:p-4 rounded-xl sm:rounded-2xl font-bold text-[1rem] sm:text-lg transition-all shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:-translate-y-1">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:animate-bounce"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        Call 911 Immediately
+                    </a>
+                    
+                    <a href="tel:988" class="w-full flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl font-semibold text-[0.9rem] sm:text-[1rem] transition-all border border-slate-200 hover:border-slate-300">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path><path d="M2 12h20"></path></svg>
+                        Crisis Lifeline (988)
+                    </a>
+                </div>
+
+                <button type="button" onclick="hideEmergency()" class="mt-6 sm:mt-8 text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-800 transition-colors">
+                    I am safe, dismiss this alert
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS FOR LOGIC -->
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const chatInput = document.getElementById('chat-input');
+        const chatForm = document.getElementById('chat-form');
+        const sendBtn = document.getElementById('send-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const emergencyModal = document.getElementById('emergency-modal');
+        
+        let isMentalMode = false;
+
+        // MODE TOGGLE LOGIC (Swaps Tailwind "dark" class on HTML element)
+        function setMode(isMental) {
+            isMentalMode = isMental;
+            if (isMental) {
+                document.documentElement.classList.add('dark');
+                chatInput.placeholder = "Share what's on your mind...";
+            } else {
+                document.documentElement.classList.remove('dark');
+                chatInput.placeholder = "Describe symptoms or ask...";
+            }
+            
+            // Clear chat and reset to new welcome message
+            chatBox.innerHTML = '';
+            chatBox.appendChild(typingIndicator); // Keep indicator in DOM
+            
+            const welcomeText = isMental 
+                ? "Welcome to your Safe Space. I am here to listen without judgment. Take a deep breath. How are you feeling right now?"
+                : "Hello. I'm CareCompass. Describe your symptoms, upload a prescription, or ask a medical question.";
+            
+            addMessage(welcomeText, 'ai');
+        }
+
+        // CHAT RENDER LOGIC
+        function addMessage(text, sender) {
+            const isUser = sender === 'user';
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex w-full group mb-6 ${isUser ? 'justify-end' : 'justify-start'}`;
+            
+            // Apply gradient for user, frosted glass for AI. Let Tailwind Dark Mode handle colors!
+            const bubbleClasses = isUser 
+                ? "bg-gradient-to-br from-teal-500 via-emerald-500 to-teal-600 dark:from-indigo-500 dark:via-purple-600 dark:to-indigo-700 shadow-xl shadow-teal-600/20 dark:shadow-purple-900/30 text-white rounded-3xl rounded-tr-sm p-4 sm:p-5 text-[0.95rem]"
+                : "bg-white/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 border border-white dark:border-white/10 shadow-lg shadow-slate-200/50 dark:shadow-black/20 backdrop-blur-xl rounded-3xl rounded-tl-sm p-4 sm:p-5 text-[0.95rem]";
+
+            let aiHeader = '';
+            if (!isUser) {
+                aiHeader = `
+                <div class="flex items-center gap-1.5 mb-2 opacity-80">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-500 dark:text-indigo-400"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
+                    <span class="text-[0.65rem] font-bold uppercase tracking-wider text-teal-600 dark:text-indigo-300">
+                        ${isMentalMode ? 'Safe Space Guide' : 'Care Triage Agent'}
+                    </span>
+                </div>`;
+            }
+
+            msgDiv.innerHTML = `
+                <div class="relative max-w-[85%] sm:max-w-[80%] leading-relaxed whitespace-pre-wrap transition-all duration-300 ${bubbleClasses}">
+                    ${aiHeader}${text}
+                </div>`;
+            
+            chatBox.insertBefore(msgDiv, typingIndicator);
+            scrollToBottom();
+        }
+
+        // MOCK AI LOGIC
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            addMessage(text, 'user');
+            chatInput.value = '';
+            sendBtn.disabled = true;
+            
+            // Show typing indicator
+            typingIndicator.classList.remove('hidden');
+            typingIndicator.classList.add('flex');
+            scrollToBottom();
+
+            // Emergency Keyword Check
+            const lowerText = text.toLowerCase();
+            const emergencyKeywords = ['chest pain', 'numb', 'stroke', 'suicide', 'kill', 'heart attack', 'breathe'];
+
+            setTimeout(() => {
+                typingIndicator.classList.add('hidden');
+                typingIndicator.classList.remove('flex');
+                
+                if (emergencyKeywords.some(kw => lowerText.includes(kw))) {
+                    showEmergency();
+                } else {
+                    let aiResponse = "";
+                    if (lowerText.includes('prescription') || lowerText.includes('decode')) {
+                        aiResponse = "I can definitely help with that. Please tap the attachment icon to upload a photo of your prescription, and I will translate the medical jargon into plain, understandable English.";
+                    } else if (lowerText.includes('panic') || lowerText.includes('anxiety')) {
+                        setMode(true); // Switch to Mental mode automatically
+                        aiResponse = "I hear you, and it is completely okay to feel overwhelmed. You are safe right now. Let's try a simple grounding exercise: Can you look around and name 3 things you can see?";
+                    } else {
+                        aiResponse = isMentalMode 
+                            ? "Thank you for sharing that with me. It takes courage to open up. Can you tell me a little bit more about what's making you feel this way?"
+                            : "I understand. To help me triage this better, could you tell me when these symptoms first started and if you are currently taking any medications?";
+                    }
+                    addMessage(aiResponse, 'ai');
+                }
+            }, 1500); // Simulate network delay
+        });
+
+        // UTILS
+        chatInput.addEventListener('input', () => {
+            sendBtn.disabled = chatInput.value.trim().length === 0;
+        });
+
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if(chatInput.value.trim()) chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        function insertText(text) {
+            chatInput.value = text;
+            chatInput.focus();
+            sendBtn.disabled = false;
+        }
+
+        function scrollToBottom() {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function showEmergency() {
+            emergencyModal.classList.remove('hidden');
+            emergencyModal.classList.add('flex');
+        }
+
+        function hideEmergency() {
+            emergencyModal.classList.add('hidden');
+            emergencyModal.classList.remove('flex');
+        }
+
+        // Initialize App
+        setMode(false);
+    </script>
+</body>
+</html>

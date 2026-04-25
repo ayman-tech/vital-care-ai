@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vital AI</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          keyframes: {
+            fadeIn:    { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            zoomSlide: { '0%': { opacity:'0', transform:'scale(0.95) translateY(16px)' }, '100%': { opacity:'1', transform:'scale(1) translateY(0)' } },
+            msgPop:    { '0%': { opacity:'0', transform:'translateY(10px) scale(0.97)' }, '100%': { opacity:'1', transform:'translateY(0) scale(1)' } },
+            pingSlow:  { '75%,100%': { transform:'scale(2)', opacity:'0' } },
+          },
+          animation: {
+            'fade-in':   'fadeIn 0.3s ease-out forwards',
+            'zoom-slide':'zoomSlide 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards',
+            'msg-pop':   'msgPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards',
+            'ping-slow': 'pingSlow 2s cubic-bezier(0,0,0.2,1) infinite',
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    /* Hide scrollbars visually */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Spring toggle thumb */
+    #toggle-thumb { transition: transform 500ms cubic-bezier(0.34,1.56,0.64,1); }
+
+    /* Paperclip pin */
+    .clip-icon { transform: rotate(-45deg); transition: transform 300ms cubic-bezier(0.34,1.56,0.64,1); }
+    .clip-icon:hover { transform: rotate(12deg); }
+
+    /* Message entrance */
+    .msg-enter { animation: msgPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+    /* Details summary arrow remove */
+    details summary::-webkit-details-marker { display: none; }
+    details summary::marker { display: none; }
+  </style>
+</head>
+
+<body class="overflow-hidden m-0 p-0">
+
+<!-- ═══════════════════════════════════════════════════════════ APP SHELL -->
+<div id="app" class="relative w-full min-h-[100dvh] flex items-center justify-center overflow-hidden bg-slate-50 transition-colors duration-1000">
+
+  <!-- Ambient blobs -->
+  <div id="blob-tl" class="pointer-events-none absolute -top-32 -left-32 w-[30rem] md:w-[50rem] h-[30rem] md:h-[50rem] rounded-full filter blur-[100px] md:blur-[150px] transition-colors duration-1000 transform-gpu bg-teal-200/60 mix-blend-multiply"></div>
+  <div id="blob-br" class="pointer-events-none absolute -bottom-32 -right-32 w-[30rem] md:w-[50rem] h-[30rem] md:h-[50rem] rounded-full filter blur-[100px] md:blur-[150px] transition-colors duration-1000 transform-gpu bg-emerald-100/60 mix-blend-multiply"></div>
+
+  <!-- ═══════════════════════════════════════════════ MAIN GLASS CARD -->
+  <div id="main-card" class="relative w-full max-w-4xl h-[100dvh] md:h-[90vh] rounded-none md:rounded-[2.5rem] flex flex-col z-10 overflow-hidden border bg-white/40 border-white/60 backdrop-blur-2xl text-slate-800 ring-1 ring-white/50 shadow-[0_30px_60px_rgba(13,148,136,0.15)] transition-all duration-700">
+
+    <!-- ══════════════════════════════════════════════════════ HEADER -->
+    <header class="px-4 md:px-8 py-4 flex items-center justify-between z-20 shrink-0">
+
+      <!-- Logo -->
+      <div class="flex items-center gap-3 select-none">
+        <div id="logo-icon" class="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-teal-500 to-emerald-400 text-white shadow-inner transition-all duration-700">
+          <!-- activity icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <span class="font-extrabold text-lg tracking-tight">Vital AI</span>
+      </div>
+
+      <!-- Squircle Mode Toggle -->
+      <div id="mode-toggle" onclick="toggleMode()"
+        class="relative w-48 md:w-64 h-10 md:h-12 flex items-center p-1.5 rounded-2xl cursor-pointer select-none border border-slate-200/60 bg-slate-100/60 shadow-inner backdrop-blur-md transition-colors duration-500">
+        <!-- Sliding thumb -->
+        <div id="toggle-thumb" class="absolute top-1.5 bottom-1.5 rounded-xl shadow-md bg-white" style="left:6px; width:calc(50% - 9px);"></div>
+        <span id="lbl-medical" class="flex-1 text-center text-[11px] font-bold uppercase tracking-widest z-10 text-teal-600 transition-colors duration-300">Medical</span>
+        <span id="lbl-mind"    class="flex-1 text-center text-[11px] font-bold uppercase tracking-widest z-10 text-slate-400 transition-colors duration-300">Mind</span>
+      </div>
+
+      <!-- User button -->
+      <button class="w-10 h-10 rounded-xl flex items-center justify-center border border-white/60 bg-white/40 backdrop-blur-md text-slate-600 hover:scale-105 active:scale-95 transition-all duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+      </button>
+    </header>
+
+    <!-- ═════════════════════════════════════════════ BODY: CHAT + SIDEBAR -->
+    <div class="flex flex-1 overflow-hidden">
+
+      <!-- Chat area -->
+      <div id="chat-area" class="flex-1 overflow-y-auto no-scrollbar px-4 md:px-8 py-4 space-y-1 scroll-smooth">
+        <div id="messages-container" class="space-y-4"></div>
+
+        <!-- Typing indicator -->
+        <div id="typing-indicator" class="hidden items-center gap-2 pt-2">
+          <div id="typing-bubble" class="flex gap-1.5 px-4 py-3 rounded-3xl rounded-tl-sm backdrop-blur-xl border bg-white/70 border-white w-16">
+            <span class="w-2 h-2 rounded-full bg-teal-400 animate-bounce" style="animation-delay:0ms"></span>
+            <span class="w-2 h-2 rounded-full bg-teal-400 animate-bounce" style="animation-delay:150ms"></span>
+            <span class="w-2 h-2 rounded-full bg-teal-400 animate-bounce" style="animation-delay:300ms"></span>
+          </div>
+          <span class="text-xs opacity-40">Vital AI is thinking…</span>
+        </div>
+
+        <div id="scroll-anchor"></div>
+      </div>
+
+      <!-- Wellbeing Sidebar (hidden in medical mode, hidden on mobile) -->
+      <aside id="wb-sidebar" class="hidden md:hidden w-52 flex-shrink-0 border-l border-slate-200/60 flex flex-col gap-5 p-4 overflow-y-auto no-scrollbar">
+
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2">Status</p>
+          <div id="severity-badge" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-green-300 bg-green-50/60 text-green-700 text-sm font-bold">
+            <span id="sev-dot">🟢</span><span id="sev-label">Low</span>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2">Mood & Stress</p>
+          <div class="rounded-xl border border-current/10 bg-current/5 p-2">
+            <svg id="mood-svg" class="w-full" viewBox="0 0 200 72" preserveAspectRatio="none" height="72">
+              <text x="100" y="40" text-anchor="middle" fill="currentColor" opacity="0.25" font-size="9">Chat to see data</text>
+            </svg>
+            <div class="flex gap-3 mt-1.5 pl-1">
+              <div class="flex items-center gap-1"><div class="w-3 h-0.5 rounded bg-blue-400"></div><span class="text-[9px] opacity-50">Mood</span></div>
+              <div class="flex items-center gap-1"><div class="w-3 h-0.5 rounded bg-red-400"></div><span class="text-[9px] opacity-50">Stress</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2">Tags</p>
+          <div id="tag-panel" class="flex flex-wrap gap-1.5">
+            <span class="text-xs opacity-30">None yet</span>
+          </div>
+        </div>
+
+      </aside>
+    </div><!-- end body -->
+
+    <!-- ══════════════════════════════════════════════════ INPUT DOCK -->
+    <div class="px-4 md:px-6 pb-4 md:pb-6 pt-2 z-20 shrink-0">
+
+      <!-- Panic button — wellbeing only -->
+      <button id="panic-btn" onclick="handlePanic()"
+        class="hidden w-full mb-3 py-2.5 rounded-xl font-bold text-sm text-white bg-red-500 hover:bg-red-600 active:scale-[0.99] transition-all duration-200 shadow-lg shadow-red-500/25 hover:shadow-red-500/40">
+        🚨 I'm Not Okay — Get Help Now
+      </button>
+
+      <!-- Quick action chips -->
+      <div id="chips-row" class="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-3"></div>
+
+      <!-- Floating input pill -->
+      <form id="chat-form" onsubmit="handleSend(event)"
+        class="relative flex items-end gap-2 md:gap-3 rounded-[2rem] p-2 border bg-white/80 border-white shadow-2xl shadow-teal-900/10 backdrop-blur-xl transition-colors duration-500">
+
+        <!-- Attachment pin -->
+        <button type="button" onclick="document.getElementById('file-upload').click()"
+          class="clip-icon p-2.5 rounded-full flex-shrink-0 hover:bg-black/5 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <input type="file" id="file-upload" class="hidden" accept=".pdf,.txt,.png,.jpg,.jpeg" onchange="handleFileUpload(this)" />
+
+        <!-- Textarea -->
+        <textarea id="msg-input" rows="1"
+          placeholder="Describe your symptoms or ask a health question…"
+          class="w-full max-h-32 min-h-[44px] py-2.5 px-1 bg-transparent outline-none resize-none text-sm leading-relaxed placeholder-slate-400 transition-colors duration-500"
+          oninput="onInput(this)" onkeydown="onKey(event)"></textarea>
+
+        <!-- Send button -->
+        <button id="send-btn" type="submit" disabled
+          class="p-3.5 rounded-full flex-shrink-0 text-white bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg shadow-teal-500/30 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:scale-95 disabled:cursor-not-allowed">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+        </button>
+      </form>
+    </div>
+
+  </div><!-- end main-card -->
+
+  <!-- ═══════════════════════════════════════════ EMERGENCY MODAL -->
+  <div id="emergency-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-2xl animate-fade-in">
+    <div class="relative bg-white rounded-[2rem] p-8 max-w-lg w-full overflow-hidden shadow-[0_0_100px_rgba(220,38,38,0.3)] animate-zoom-slide">
+      <!-- Red top stripe -->
+      <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-600 to-red-500 rounded-t-[2rem]"></div>
+
+      <!-- Pulsing warning icon -->
+      <div class="text-center mb-6 mt-2">
+        <div class="relative w-20 h-20 mx-auto mb-4">
+          <div class="absolute inset-0 rounded-2xl bg-red-400/30 animate-ping-slow"></div>
+          <div class="relative w-20 h-20 rounded-2xl bg-red-50 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          </div>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-2">Are You In Crisis?</h2>
+        <p class="text-slate-500 text-sm leading-relaxed max-w-sm mx-auto">We noticed something that may need immediate attention. Your safety matters most.</p>
+      </div>
+
+      <div class="space-y-3 mb-6">
+        <a href="tel:911" class="group flex items-center justify-center gap-3 w-full py-4 px-6 rounded-2xl font-bold text-base text-white bg-gradient-to-r from-red-600 to-red-500 shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:animate-bounce"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.61 4.41 2 2 0 0 1 3.58 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Call 911 Immediately
+        </a>
+        <a href="tel:988" class="group flex items-center justify-center gap-3 w-full py-3.5 px-6 rounded-2xl font-semibold text-sm text-slate-800 bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          988 Suicide & Crisis Lifeline — Call or Text
+        </a>
+        <a href="sms:741741&body=HOME" class="group flex items-center justify-center gap-3 w-full py-3.5 px-6 rounded-2xl font-semibold text-sm text-slate-800 bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Crisis Text Line — Text HOME to 741741
+        </a>
+      </div>
+
+      <div class="text-center">
+        <button onclick="closeEmergency()" class="text-slate-400 text-sm underline underline-offset-2 hover:text-slate-600 transition-colors">
+          I am safe, dismiss this alert
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #app -->
+
+<!-- ═══════════════════════════════════════════════════════════ SCRIPT -->
+<script>
+{% raw %}
+// ── State ──────────────────────────────────────────────────────────────────────
+const S = {
+  mode: 'medical',        // 'medical' | 'mental'
+  messages: [],
+  typing: false,
+  sessionId: null,
+  wb: {
+    severity: 'LOW',
+    mood: [],             // [{score, ts}]
+    stress: [],           // [{score, ts}]
+    tags: {},             // tag → {count, sev}
+    consentStatus: null,
+  },
+};
+
+const EMERGENCY_KW = [
+  'chest pain','suicid','kill myself','stroke','cant breathe',"can't breathe",
+  'overdose','seizure','i want to die','self harm','self-harm',
+];
+
+const MEDICAL_CHIPS  = ['Decode my prescription 📄','Explain lab results','Head & neck pain','Stomach ache','Nearest urgent care?','Prep for doctor visit'];
+const WELLBEING_CHIPS = ["I'm feeling anxious 💙","Can't sleep","Feeling overwhelmed","Burnout check-in","Need to vent","Academic stress"];
+
+// ── API ────────────────────────────────────────────────────────────────────────
+async function apiDiagnosis(msg) {
+  const r = await fetch('/api/diagnosis/chat', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ message: msg, session_id: S.sessionId }),
+  });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+async function apiWellbeing(msg) {
+  const r = await fetch('/api/wellbeing/chat', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ message: msg, session_id: S.sessionId }),
+  });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+async function apiPanic() {
+  const r = await fetch('/api/wellbeing/panic', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ session_id: S.sessionId }),
+  });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+async function apiUpload(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const r = await fetch('/api/documents/upload', { method:'POST', body: fd });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+// ── Send message ───────────────────────────────────────────────────────────────
+async function handleSend(e) {
+  if (e) e.preventDefault();
+  const inp = $('msg-input');
+  const text = inp.value.trim();
+  if (!text || S.typing) return;
+
+  // Emergency check (client-side, instant)
+  if (S.mode === 'medical' && EMERGENCY_KW.some(kw => text.toLowerCase().includes(kw))) {
+    openEmergency();
+  }
+
+  addMsg('user', text);
+  inp.value = '';
+  inp.style.height = '44px';
+  $('send-btn').disabled = true;
+  setTyping(true);
+
+  try {
+    let text_out = '', structured = null;
+
+    if (S.mode === 'medical') {
+      const d = await apiDiagnosis(text);
+      S.sessionId = S.sessionId || d.session_id;
+      text_out  = d.response || 'Sorry, something went wrong.';
+      structured = buildMedCard(d);
+    } else {
+      const d = await apiWellbeing(text);
+      S.sessionId  = d.session_id || S.sessionId;
+      S.wb.consentStatus = d.status;
+      text_out = d.response || '';
+      if (d.agent_data) ingestAgentData(d.agent_data);
+      if (d.severity) bumpSeverity(d.severity);
+      if (d.escalated) openEmergency();
+    }
+
+    setTyping(false);
+    addMsg('assistant', text_out, structured);
+    refreshWbUI();
+  } catch {
+    setTyping(false);
+    addMsg('assistant', '⚠️ Connection error — please check your network and try again.');
+  }
+}
+
+// ── File upload ────────────────────────────────────────────────────────────────
+async function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  addMsg('user', `📎 Uploading: ${file.name}…`);
+  setTyping(true);
+  try {
+    const d = await apiUpload(file);
+    setTyping(false);
+    if (d.status === 'processed') {
+      addMsg('assistant',
+        `✅ **${d.filename}** uploaded successfully.\n\nHere's a preview of what I extracted:\n\n_${d.extracted_text_preview}_\n\nWould you like me to explain this document in plain language?`
+      );
+    } else {
+      addMsg('assistant', `⚠️ I had trouble reading **${d.filename}**. Try a clearer scan or a plain text version.`);
+    }
+  } catch {
+    setTyping(false);
+    addMsg('assistant', '⚠️ Upload failed. Please try again.');
+  }
+  input.value = '';
+}
+
+// ── Panic button ───────────────────────────────────────────────────────────────
+async function handlePanic() {
+  openEmergency();
+  if (!S.sessionId) return;
+  try {
+    const d = await apiPanic();
+    addMsg('assistant',
+      d.message || 'I hear you. Please reach out to one of the resources above — you matter 💙'
+    );
+    scrollBottom();
+  } catch { /* silent */ }
+}
+
+// ── Build medical info card ────────────────────────────────────────────────────
+function buildMedCard(d) {
+  if (!d) return null;
+  const urgency  = d.urgency;
+  const causes   = d.possible_causes   || [];
+  const care     = d.nearest_care_suggestions || [];
+  const provider = d.recommended_provider_type;
+  const mitigation = d.temporary_mitigation || [];
+
+  const UX = { emergency:'🚨 bg-red-50 border-red-200 text-red-700', urgent:'⚠️ bg-orange-50 border-orange-200 text-orange-700', soon:'📅 bg-yellow-50 border-yellow-200 text-yellow-700', routine:'✅ bg-teal-50 border-teal-200 text-teal-700', self_care:'🏠 bg-green-50 border-green-200 text-green-700', unknown:'❓ bg-slate-50 border-slate-200 text-slate-600' };
+  const LC = { more_likely:'text-orange-600', possible:'text-yellow-600', less_likely:'text-slate-400', cannot_rule_out:'text-slate-300' };
+
+  let h = '<div class="mt-3 space-y-2 text-[13px]">';
+
+  // Urgency
+  if (urgency && urgency.level !== 'unknown') {
+    const parts = (UX[urgency.level] || UX.unknown).split(' ');
+    const icon  = parts[0];
+    const cls   = parts.slice(1).join(' ');
+    h += `<div class="flex flex-wrap items-center gap-2 px-3 py-2 rounded-xl border ${cls} font-semibold">
+      <span>${icon}</span><span>${urgency.level.replace('_',' ').toUpperCase()}</span>
+      ${urgency.recommended_timeframe ? `<span class="font-normal opacity-70">— ${urgency.recommended_timeframe}</span>` : ''}
+    </div>`;
+  }
+
+  // Provider
+  if (provider && provider.specialty && provider.specialty !== 'unknown') {
+    h += `<div class="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-100 bg-blue-50/60 text-blue-700">
+      🏥 <span class="font-semibold">See: ${provider.specialty.replace(/_/g,' ')}</span>
+      ${provider.reason ? `<span class="font-normal opacity-70 truncate">— ${provider.reason}</span>` : ''}
+    </div>`;
+  }
+
+  // Possible causes
+  if (causes.length) {
+    h += `<details class="rounded-xl border border-current/10 overflow-hidden group">
+      <summary class="flex items-center justify-between px-3 py-2 cursor-pointer font-semibold hover:bg-current/5 transition-colors list-none">
+        <span>Possible causes (${causes.length})</span>
+        <svg class="w-4 h-4 opacity-40 group-open:rotate-180 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </summary>
+      <div class="px-3 pb-3 pt-1 space-y-1.5 border-t border-current/10">`;
+    for (const c of causes.slice(0, 5)) {
+      h += `<div class="flex items-start gap-2">
+        <span class="text-[11px] font-bold ${LC[c.likelihood]||'text-slate-400'} whitespace-nowrap pt-0.5">${c.likelihood.replace(/_/g,' ')}</span>
+        <span>${esc(c.name)}</span>
+      </div>`;
+    }
+    h += `</div></details>`;
+  }
+
+  // Mitigation
+  if (mitigation.length) {
+    h += `<details class="rounded-xl border border-current/10 overflow-hidden group">
+      <summary class="flex items-center justify-between px-3 py-2 cursor-pointer font-semibold hover:bg-current/5 transition-colors list-none">
+        <span>While you wait</span>
+        <svg class="w-4 h-4 opacity-40 group-open:rotate-180 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </summary>
+      <div class="px-3 pb-3 pt-1 space-y-2 border-t border-current/10">`;
+    for (const m of mitigation.slice(0, 3)) {
+      h += `<div><div class="font-semibold">${esc(m.title)}</div><div class="opacity-70">${esc(m.description)}</div></div>`;
+    }
+    h += `</div></details>`;
+  }
+
+  // Nearest care
+  if (care.length) {
+    h += `<details class="rounded-xl border border-current/10 overflow-hidden group">
+      <summary class="flex items-center justify-between px-3 py-2 cursor-pointer font-semibold hover:bg-current/5 transition-colors list-none">
+        <span>Nearby care</span>
+        <svg class="w-4 h-4 opacity-40 group-open:rotate-180 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </summary>
+      <div class="px-3 pb-3 pt-1 space-y-2 border-t border-current/10">`;
+    for (const s of care.slice(0, 3)) {
+      h += `<div class="text-[12px]">
+        <div class="font-semibold">${esc(s.name)}</div>
+        <div class="opacity-60">${esc(s.address)}${s.phone ? ' · ' + esc(s.phone) : ''}</div>
+        ${s.distance ? `<div class="opacity-40">${esc(s.distance)}</div>` : ''}
+      </div>`;
+    }
+    h += `</div></details>`;
+  }
+
+  h += `<p class="text-[11px] opacity-40 italic px-1">⚠️ Not a diagnosis. Always consult a healthcare professional.</p>`;
+  h += '</div>';
+  return h;
+}
+
+// ── Wellbeing helpers ──────────────────────────────────────────────────────────
+const CRISIS_TAGS = new Set(['#self-harm-risk','#crisis','#suicidal-ideation','#hopelessness']);
+const MOD_TAGS    = new Set(['#depression-signs','#burnout','#emotional-numbness','#anxiety','#sleep-deprivation','#social-isolation','#loneliness']);
+
+function ingestAgentData(ad) {
+  const now = Date.now();
+  if (typeof ad.mood_score   === 'number') S.wb.mood.push({s: ad.mood_score, t: now});
+  if (typeof ad.stress_score === 'number') S.wb.stress.push({s: ad.stress_score, t: now});
+  for (const tag of (ad.tags||[])) {
+    const t   = tag.toLowerCase();
+    const sev = CRISIS_TAGS.has(t) ? 'critical' : MOD_TAGS.has(t) ? 'moderate' : 'low';
+    if (!S.wb.tags[t]) S.wb.tags[t] = { count:0, sev };
+    S.wb.tags[t].count++;
+  }
+}
+
+function bumpSeverity(sev) {
+  const rank = { LOW:1, MODERATE:2, CRITICAL:3 };
+  if ((rank[sev]||1) > (rank[S.wb.severity]||1)) S.wb.severity = sev;
+}
+
+// ── Refresh wellbeing sidebar ──────────────────────────────────────────────────
+function refreshWbUI() {
+  if (S.mode !== 'mental') return;
+
+  // Badge
+  const SEV = {
+    LOW:      { dot:'🟢', lbl:'Low',      cls:'border-green-300 bg-green-50/60 text-green-700' },
+    MODERATE: { dot:'🟡', lbl:'Moderate', cls:'border-yellow-300 bg-yellow-50/60 text-yellow-700' },
+    CRITICAL: { dot:'🔴', lbl:'Critical', cls:'border-red-300 bg-red-50/60 text-red-700' },
+  };
+  const sc = SEV[S.wb.severity] || SEV.LOW;
+  const badge = $('severity-badge');
+  badge.className = `flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-bold ${sc.cls}`;
+  $('sev-dot').textContent   = sc.dot;
+  $('sev-label').textContent = sc.lbl;
+
+  drawGraph();
+  drawTags();
+}
+
+function drawGraph() {
+  const svg    = $('mood-svg');
+  const mood   = S.wb.mood;
+  const stress = S.wb.stress;
+  if (mood.length < 2 && stress.length < 2) return;
+
+  const W = 200, H = 72, P = 8;
+  const pw = W - P*2, ph = H - P*2;
+  const tx = (i,n) => (P + (i / Math.max(n-1,1)) * pw).toFixed(1);
+  const ty = (s)   => (P + (1 - (s-1)/9) * ph).toFixed(1);
+  const path = (data, col) => {
+    if (data.length < 2) return '';
+    const d = data.map((p,i)=>`${i===0?'M':'L'} ${tx(i,data.length)} ${ty(p.s)}`).join(' ');
+    const lx = tx(data.length-1, data.length), ly = ty(data[data.length-1].s);
+    return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="${lx}" cy="${ly}" r="3" fill="${col}"/>`;
+  };
+  svg.innerHTML = path(mood,'#60a5fa') + path(stress,'#f87171');
+}
+
+function drawTags() {
+  const panel = $('tag-panel');
+  const keys  = Object.keys(S.wb.tags);
+  if (!keys.length) { panel.innerHTML = '<span class="text-xs opacity-30">None yet</span>'; return; }
+
+  const W = {critical:3, moderate:2, low:1};
+  const CLS = { critical:'bg-red-100 text-red-700 border-red-200', moderate:'bg-yellow-100 text-yellow-700 border-yellow-200', low:'bg-green-100 text-green-700 border-green-200' };
+
+  keys.sort((a,b) => (S.wb.tags[b].count * W[S.wb.tags[b].sev]) - (S.wb.tags[a].count * W[S.wb.tags[a].sev]));
+
+  panel.innerHTML = keys.slice(0,8).map(tag => {
+    const info = S.wb.tags[tag];
+    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium ${CLS[info.sev]||CLS.low}">
+      ${esc(tag)} <span class="opacity-60">${info.count}</span>
+    </span>`;
+  }).join('');
+}
+
+// ── Messages ───────────────────────────────────────────────────────────────────
+function addMsg(role, content, structured=null) {
+  S.messages.push({ role, content, structured });
+  renderMessages();
+  scrollBottom();
+}
+
+function renderMessages() {
+  $('messages-container').innerHTML = S.messages.map((m,i) => msgHTML(m, i === S.messages.length-1)).join('');
+}
+
+function msgHTML(m, isNew) {
+  const med = S.mode === 'medical';
+  const cls = isNew ? 'msg-enter' : '';
+
+  if (m.role === 'user') {
+    const bg = med
+      ? 'bg-gradient-to-br from-teal-500 to-emerald-500 text-white shadow-xl shadow-teal-600/20'
+      : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xl shadow-purple-900/30';
+    return `<div class="flex justify-end ${cls}">
+      <div class="max-w-[85%] md:max-w-[80%] px-5 py-3 rounded-3xl rounded-tr-sm text-sm leading-relaxed ${bg}">${md(m.content)}</div>
+    </div>`;
+  }
+
+  // AI bubble
+  const bubble = med
+    ? 'bg-white/70 text-slate-800 border border-white backdrop-blur-xl shadow-lg'
+    : 'bg-slate-800/60 text-slate-200 border border-white/10 backdrop-blur-xl shadow-lg';
+  const accent  = med ? 'text-teal-500' : 'text-indigo-400';
+  const agentLbl= med ? 'CARE TRIAGE AGENT' : 'SAFE SPACE GUIDE';
+
+  return `<div class="flex justify-start ${cls}">
+    <div class="max-w-[85%] md:max-w-[80%]">
+      <div class="flex items-center gap-1.5 mb-1 ml-1">
+        <svg class="${accent}" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        <span class="text-[9px] font-bold uppercase tracking-widest ${accent} opacity-75">${agentLbl}</span>
+      </div>
+      <div class="px-5 py-3 rounded-3xl rounded-tl-sm text-sm leading-relaxed ${bubble}">
+        ${md(m.content)}${m.structured||''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Typing indicator ───────────────────────────────────────────────────────────
+function setTyping(on) {
+  S.typing = on;
+  const el  = $('typing-indicator');
+  const bbl = $('typing-bubble');
+  const med = S.mode === 'medical';
+  const dot = med ? 'bg-teal-400' : 'bg-indigo-400';
+  const bub = med ? 'bg-white/70 border-white' : 'bg-slate-800/60 border-white/10';
+  bbl.className = `flex gap-1.5 px-4 py-3 rounded-3xl rounded-tl-sm backdrop-blur-xl border w-16 ${bub}`;
+  bbl.querySelectorAll('span').forEach(s => s.className = `w-2 h-2 rounded-full animate-bounce ${dot}`);
+  el.className  = on ? 'flex items-center gap-2 pt-2' : 'hidden items-center gap-2 pt-2';
+  if (on) scrollBottom();
+}
+
+// ── Mode toggle ────────────────────────────────────────────────────────────────
+function toggleMode() {
+  S.mode      = S.mode === 'medical' ? 'mental' : 'medical';
+  S.messages  = [];
+  S.sessionId = null;
+  applyMode();
+  renderMessages();
+  renderChips();
+  setTyping(false);
+  addWelcome();
+  refreshWbUI();
+}
+
+function applyMode() {
+  const med = S.mode === 'medical';
+
+  // App background
+  $('app').className = `relative w-full min-h-[100dvh] flex items-center justify-center overflow-hidden transition-colors duration-1000 ${med ? 'bg-slate-50' : 'bg-slate-950'}`;
+
+  // Blobs
+  const blobBase = 'pointer-events-none absolute w-[30rem] md:w-[50rem] h-[30rem] md:h-[50rem] rounded-full filter blur-[100px] md:blur-[150px] transition-colors duration-1000 transform-gpu';
+  $('blob-tl').className = `${blobBase} -top-32 -left-32 ${med ? 'bg-teal-200/60 mix-blend-multiply' : 'bg-indigo-900/60 mix-blend-screen'}`;
+  $('blob-br').className = `${blobBase} -bottom-32 -right-32 ${med ? 'bg-emerald-100/60 mix-blend-multiply' : 'bg-purple-900/60 mix-blend-screen'}`;
+
+  // Main card
+  $('main-card').className = `relative w-full max-w-4xl h-[100dvh] md:h-[90vh] rounded-none md:rounded-[2.5rem] flex flex-col z-10 overflow-hidden border transition-all duration-700 backdrop-blur-2xl ring-1 ${
+    med
+      ? 'bg-white/40 border-white/60 text-slate-800 ring-white/50 shadow-[0_30px_60px_rgba(13,148,136,0.15)]'
+      : 'bg-slate-900/40 border-white/5  text-slate-200 ring-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.6)]'
+  }`;
+
+  // Logo
+  $('logo-icon').className = `w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-inner transition-all duration-700 ${med ? 'bg-gradient-to-br from-teal-500 to-emerald-400' : 'bg-gradient-to-br from-indigo-500 to-purple-600'}`;
+  $('logo-icon').innerHTML = med
+    ? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`
+    : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
+
+  // Toggle thumb + labels
+  const thumb = $('toggle-thumb');
+  const w     = $('mode-toggle').offsetWidth;
+  thumb.style.transform = med ? 'translateX(0)' : `translateX(${Math.round(w/2)}px)`;
+  thumb.className = `absolute top-1.5 bottom-1.5 rounded-xl shadow-md transition-all ${med ? 'bg-white' : 'bg-slate-700'}`;
+
+  $('mode-toggle').className = `relative w-48 md:w-64 h-10 md:h-12 flex items-center p-1.5 rounded-2xl cursor-pointer select-none border backdrop-blur-md transition-colors duration-500 shadow-inner ${
+    med ? 'border-slate-200/60 bg-slate-100/60' : 'border-white/10 bg-slate-800/60'
+  }`;
+  $('lbl-medical').className = `flex-1 text-center text-[11px] font-bold uppercase tracking-widest z-10 transition-colors duration-300 ${med ? 'text-teal-600' : 'text-slate-500'}`;
+  $('lbl-mind').className    = `flex-1 text-center text-[11px] font-bold uppercase tracking-widest z-10 transition-colors duration-300 ${!med ? 'text-indigo-400' : 'text-slate-400'}`;
+
+  // Input form
+  $('chat-form').className = `relative flex items-end gap-2 md:gap-3 rounded-[2rem] p-2 border backdrop-blur-xl shadow-2xl transition-colors duration-500 ${
+    med ? 'bg-white/80 border-white shadow-teal-900/10' : 'bg-slate-900/80 border-white/10 shadow-black/50'
+  }`;
+  $('send-btn').className = `p-3.5 rounded-full flex-shrink-0 text-white transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:scale-95 disabled:cursor-not-allowed shadow-lg ${
+    med ? 'bg-gradient-to-br from-teal-500 to-emerald-500 shadow-teal-500/30' : 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/30'
+  }`;
+  $('msg-input').placeholder = med
+    ? 'Describe your symptoms or ask a health question…'
+    : "How are you feeling today? I'm here to listen 💙";
+  $('msg-input').className = `w-full max-h-32 min-h-[44px] py-2.5 px-1 bg-transparent outline-none resize-none text-sm leading-relaxed transition-colors duration-500 ${
+    med ? 'placeholder-slate-400' : 'placeholder-slate-500'
+  }`;
+
+  // Sidebar
+  const sidebar = $('wb-sidebar');
+  sidebar.className = med
+    ? 'hidden w-52 flex-shrink-0 border-l border-slate-200/60 flex flex-col gap-5 p-4 overflow-y-auto no-scrollbar'
+    : 'hidden md:flex w-52 flex-shrink-0 border-l border-white/10 flex-col gap-5 p-4 overflow-y-auto no-scrollbar';
+
+  // Panic button
+  $('panic-btn').className = `${med ? 'hidden' : ''} w-full mb-3 py-2.5 rounded-xl font-bold text-sm text-white bg-red-500 hover:bg-red-600 active:scale-[0.99] transition-all duration-200 shadow-lg shadow-red-500/25`;
+}
+
+// ── Quick chips ────────────────────────────────────────────────────────────────
+function renderChips() {
+  const chips = S.mode === 'medical' ? MEDICAL_CHIPS : WELLBEING_CHIPS;
+  const med   = S.mode === 'medical';
+  const cls   = med
+    ? 'bg-white/70 border-white/80 text-slate-700 hover:bg-white hover:shadow'
+    : 'bg-slate-800/70 border-white/10 text-slate-300 hover:bg-slate-700/80';
+
+  $('chips-row').innerHTML = chips.map(chip =>
+    `<button type="button" onclick="useChip(this)"
+      class="whitespace-nowrap text-xs px-3.5 py-1.5 rounded-full border backdrop-blur-sm transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] flex-shrink-0 ${cls}">
+      ${chip}
+    </button>`
+  ).join('');
+}
+
+function useChip(btn) {
+  // Strip emoji via Unicode ranges
+  const raw  = btn.textContent.trim();
+  const text = raw.replace(/[\u{1F300}-\u{1FAFF}]/gu, '').replace(/[☀-➿]/gu,'').trim();
+  const inp  = $('msg-input');
+  inp.value  = text;
+  inp.focus();
+  onInput(inp);
+}
+
+// ── Emergency modal ────────────────────────────────────────────────────────────
+function openEmergency()  { $('emergency-modal').classList.remove('hidden'); }
+function closeEmergency() { $('emergency-modal').classList.add('hidden'); }
+
+// ── Welcome message ────────────────────────────────────────────────────────────
+function addWelcome() {
+  const med = S.mode === 'medical';
+  const msg = med
+    ? "Hi! I'm **Vital AI**, your medical navigation assistant. I can help you understand symptoms, explain medical documents, and guide you to the right care.\n\nI'm *not a doctor* and cannot diagnose you — but I can help you prepare for a visit and make sense of what you're experiencing.\n\nWhat's going on today?"
+    : "Hi, I'm your well-being companion 💙 Before we begin, I want to be upfront: I'm an AI, not a licensed therapist. I'm here to listen, support, and help you find the right resources.\n\nDo you consent to me tracking our conversation today to better support you? *(Yes / No)*";
+  addMsg('assistant', msg);
+}
+
+// ── Util ───────────────────────────────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+
+function esc(t='') {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function md(text='') {
+  return esc(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+    .replace(/`(.+?)`/g,       '<code class="px-1 py-0.5 rounded bg-current/10 text-xs font-mono">$1</code>')
+    .replace(/\n/g,            '<br>');
+}
+
+function scrollBottom() {
+  requestAnimationFrame(() => $('scroll-anchor').scrollIntoView({ behavior:'smooth' }));
+}
+
+function onInput(el) {
+  el.style.height = '44px';
+  el.style.height = Math.min(el.scrollHeight, 128) + 'px';
+  $('send-btn').disabled = !el.value.trim();
+}
+
+function onKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); }
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  applyMode();
+  renderChips();
+  addWelcome();
+  $('msg-input').focus();
+});
+{% endraw %}
+</script>
+</body>
+</html>

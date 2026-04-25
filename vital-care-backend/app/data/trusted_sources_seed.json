@@ -1,0 +1,74 @@
+[
+  {
+    "id": "medlineplus",
+    "name": "MedlinePlus",
+    "organization": "U.S. National Library of Medicine",
+    "url": "https://medlineplus.gov",
+    "description": "Trusted health information from the National Library of Medicine covering diseases, conditions, and wellness topics.",
+    "topics": ["diseases", "conditions", "medications", "lab tests", "medical encyclopedia"],
+    "sample_snippets": [
+      "MedlinePlus provides authoritative health information written for patients and their families.",
+      "Information on thousands of diseases, conditions, and wellness topics from the National Institutes of Health."
+    ]
+  },
+  {
+    "id": "cdc",
+    "name": "Centers for Disease Control and Prevention (CDC)",
+    "organization": "CDC",
+    "url": "https://www.cdc.gov",
+    "description": "US public health agency providing guidance on disease prevention, health promotion, and emergency preparedness.",
+    "topics": ["infectious disease", "chronic disease", "vaccines", "emergency preparedness", "public health"],
+    "sample_snippets": [
+      "The CDC provides evidence-based public health guidance and disease surveillance data.",
+      "CDC recommendations on vaccines, disease prevention, and outbreak response."
+    ]
+  },
+  {
+    "id": "who",
+    "name": "World Health Organization (WHO)",
+    "organization": "WHO",
+    "url": "https://www.who.int",
+    "description": "International public health authority providing global health guidance and disease statistics.",
+    "topics": ["global health", "infectious disease", "mental health", "nutrition", "emergency health"],
+    "sample_snippets": [
+      "WHO provides global health leadership, norms and standards, and technical support to countries.",
+      "International health statistics and evidence-based public health guidelines."
+    ]
+  },
+  {
+    "id": "nih",
+    "name": "National Institutes of Health (NIH)",
+    "organization": "NIH",
+    "url": "https://www.nih.gov",
+    "description": "Primary US federal agency for biomedical and public health research.",
+    "topics": ["medical research", "clinical trials", "biomedical science", "health conditions"],
+    "sample_snippets": [
+      "NIH funds and conducts research to improve health and prevent disease.",
+      "Access to peer-reviewed research and clinical trial information from the world's largest medical research agency."
+    ]
+  },
+  {
+    "id": "nhs",
+    "name": "National Health Service (NHS)",
+    "organization": "NHS UK",
+    "url": "https://www.nhs.uk",
+    "description": "UK national health service providing patient health information and clinical guidance.",
+    "topics": ["symptoms", "conditions", "treatments", "medications", "mental health"],
+    "sample_snippets": [
+      "NHS provides trusted health information for patients on symptoms, treatments, and self-care.",
+      "Evidence-based clinical information reviewed by UK healthcare professionals."
+    ]
+  },
+  {
+    "id": "samhsa",
+    "name": "Substance Abuse and Mental Health Services Administration (SAMHSA)",
+    "organization": "SAMHSA",
+    "url": "https://www.samhsa.gov",
+    "description": "US agency leading efforts to reduce substance use and mental health disorders.",
+    "topics": ["mental health", "substance abuse", "addiction", "recovery", "crisis support"],
+    "sample_snippets": [
+      "SAMHSA provides resources for mental health and substance use disorder prevention and treatment.",
+      "National Helpline: 1-800-662-4357 — free, confidential, 24/7 treatment referral service."
+    ]
+  }
+]
