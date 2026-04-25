@@ -90,17 +90,15 @@ class DiagnosisChatAgent:
                 safety_disclaimer=STANDARD_DISCLAIMER,
             )
 
-        # Step 2: Detect intent
-        intent_data = await self._detect_intent(message)
+        # Step 2: Detect intent (with history so follow-ups are classified correctly)
+        intent_data = await self._detect_intent(message, request.history)
         intent = intent_data.get("intent", "unknown")
         required_skills: list[str] = intent_data.get("requires_skills", [])
 
         # Step 3: Route to appropriate skill pipeline
-        response = DiagnosisChatResponse(intent=intent)  # type: ignore
-
         if intent in ("symptoms", "care_navigation", "general_health", "unknown"):
             response = await self._run_symptom_pipeline(
-                message, user_context, location, intent
+                message, user_context, location, intent, request.history
             )
         elif intent == "document_explanation":
             response = await self._run_document_pipeline(message, user_context)
@@ -117,11 +115,18 @@ class DiagnosisChatAgent:
         response.safety_disclaimer = STANDARD_DISCLAIMER
         return response
 
-    async def _detect_intent(self, message: str) -> dict:
-        result = await self.llm.chat_completion_json(
-            system_prompt=INTENT_DETECTION_PROMPT,
-            user_message=message,
-        )
+    async def _detect_intent(self, message: str, history: list[dict]) -> dict:
+        if history:
+            messages = history + [{"role": "user", "content": message}]
+            result = await self.llm.chat_with_history_json(
+                system_prompt=INTENT_DETECTION_PROMPT,
+                messages=messages,
+            )
+        else:
+            result = await self.llm.chat_completion_json(
+                system_prompt=INTENT_DETECTION_PROMPT,
+                user_message=message,
+            )
         return result or {"intent": "unknown", "requires_skills": []}
 
     async def _run_symptom_pipeline(
@@ -130,9 +135,10 @@ class DiagnosisChatAgent:
         user_context,
         location: dict | None,
         intent: str,
+        history: list[dict] | None = None,
     ) -> DiagnosisChatResponse:
-        # Step 1: Extract symptom details
-        symptom_data = await self.symptom_skill.run(message, user_context)
+        # Step 1: Extract symptom details (history gives the LLM full conversation context)
+        symptom_data = await self.symptom_skill.run(message, user_context, history or [])
         symptom_summary = symptom_data.get("symptom_summary", message)
         user_context_notes = symptom_data.get("user_context_notes", "")
         follow_up_questions = symptom_data.get("follow_up_questions", [])

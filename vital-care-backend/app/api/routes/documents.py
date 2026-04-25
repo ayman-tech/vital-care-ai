@@ -1,6 +1,7 @@
 import logging
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from typing import Optional
 from sqlalchemy.orm import Session
 from app.schemas.document import DocumentUploadResponse, DocumentExplainRequest, DocumentExplainResponse
 from app.services.document_parser import get_document_parser
@@ -24,6 +25,7 @@ PREVIEW_LENGTH = 500
 @router.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(
     file: UploadFile = File(...),
+    session_id: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ):
     """
@@ -45,6 +47,7 @@ async def upload_document(
         filename=file.filename or "document",
         file_type=file.content_type or "unknown",
         extracted_text=extracted,
+        session_id=session_id or None,
     )
     db.add(doc)
     db.commit()

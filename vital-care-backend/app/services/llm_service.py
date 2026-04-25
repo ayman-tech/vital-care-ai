@@ -83,6 +83,27 @@ class LLMService:
         response = await self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content or ""
 
+    async def chat_with_history_json(
+        self,
+        system_prompt: str,
+        messages: list[dict[str, str]],
+        temperature: float = 0.2,
+        max_tokens: int = 2000,
+    ) -> dict:
+        """Multi-turn chat completion that returns parsed JSON."""
+        raw = await self.chat_with_history(
+            system_prompt=system_prompt,
+            messages=messages,
+            json_mode=True,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            logger.error("Failed to parse LLM JSON response: %s", raw)
+            return {}
+
 
 _llm_service: Optional[LLMService] = None
 

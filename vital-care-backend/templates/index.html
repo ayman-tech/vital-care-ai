@@ -279,6 +279,7 @@ async function apiPanic() {
 async function apiUpload(file) {
   const fd = new FormData();
   fd.append('file', file);
+  if (S.sessionId) fd.append('session_id', S.sessionId);
   const r = await fetch('/api/documents/upload', { method:'POST', body: fd });
   if (!r.ok) throw new Error(r.status);
   return r.json();
@@ -333,6 +334,12 @@ async function handleSend(e) {
 async function handleFileUpload(input) {
   const file = input.files[0];
   if (!file) return;
+
+  // Ensure we have a session ID before uploading so the doc is linked to this session
+  if (!S.sessionId) {
+    S.sessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  }
+
   addMsg('user', `📎 Uploading: ${file.name}…`);
   setTyping(true);
   try {
@@ -717,7 +724,10 @@ function md(text='') {
 }
 
 function scrollBottom() {
-  requestAnimationFrame(() => $('scroll-anchor').scrollIntoView({ behavior:'smooth' }));
+  requestAnimationFrame(() => {
+    const area = $('chat-area');
+    area.scrollTop = area.scrollHeight;
+  });
 }
 
 function onInput(el) {

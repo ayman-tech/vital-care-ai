@@ -1,10 +1,25 @@
-# Python-generated files
+# Python
 __pycache__/
 *.py[oc]
+*.pyc
+*.pyo
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
 
 # Virtual environments
 .venv
+venv/
+
+# Environment & secrets
+.env
+
+# Database
+*.db
+
+# Test cache
+.pytest_cache/
+
+# Vital AI specific
+vector_db/

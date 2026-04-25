@@ -33,9 +33,11 @@ class DiagnosisChatRequest(BaseModel):
     message: str
     location: Optional[LocationContext] = None
     user_context: Optional[UserContext] = None
+    history: list[dict] = []
 
 
 class DiagnosisChatResponse(BaseModel):
+    session_id: Optional[str] = None
     response: str
     intent: ChatIntent = "unknown"
     urgency: UrgencyResult = UrgencyResult()
