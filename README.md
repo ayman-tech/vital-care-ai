@@ -161,7 +161,7 @@ cp .env.example .env
 ```bash
 # Option A — from vital-care-backend/
 uvicorn app.main:app --reload
-
+c
 # Option B — from the project root
 python main.py
 

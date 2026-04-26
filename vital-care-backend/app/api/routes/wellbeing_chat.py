@@ -46,10 +46,6 @@ async def wellbeing_chat(
     """
     session = _get_or_create_session(request.session_id, request.user_id, db)
 
-    # Client may pass consent_given explicitly (e.g. after UI consent screen)
-    if request.consent_given is not None and not session.consent_given:
-        session.consent_given = request.consent_given
-
     messages = (
         db.query(WellbeingMessage)
         .filter(WellbeingMessage.session_id == session.id)

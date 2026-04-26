@@ -10,7 +10,7 @@ from app.schemas.wellbeing import (
     AgentData, EscalationSummary, MoodPoint, StressPoint, TagEntry, SeverityLevel,
 )
 from app.models.wellbeing import WellbeingSession, WellbeingMessage
-from app.prompts.wellbeing_system_prompt import WELLBEING_SYSTEM_PROMPT, CONSENT_OPENING_MESSAGE
+from app.prompts.wellbeing_system_prompt import WELLBEING_SYSTEM_PROMPT
 from app.schemas.urgency import RecommendedProviderType
 
 logger = logging.getLogger(__name__)
@@ -100,22 +100,9 @@ class WellbeingAgent:
         messages: list[WellbeingMessage],
     ) -> WellbeingChatResponse:
 
-        # New session — send consent opener immediately
-        if not messages:
-            return WellbeingChatResponse(
-                response=CONSENT_OPENING_MESSAGE,
-                session_id=session.id,
-                severity="LOW",
-                status="awaiting_consent",
-            )
-
-        # Consent not yet given — check if this message grants it
-        if not session.consent_given:
-            return self._handle_consent_response(request.message, session)
-
         # Build conversation history for the LLM
+        # messages already includes the current user message (added by the route before calling agent)
         history = [{"role": m.role, "content": m.content} for m in messages]
-        history.append({"role": "user", "content": request.message})
 
         raw_response = await self.llm.chat_with_history(
             system_prompt=WELLBEING_SYSTEM_PROMPT,
@@ -174,31 +161,6 @@ class WellbeingAgent:
     # ------------------------------------------------------------------ #
     #  Internal helpers                                                    #
     # ------------------------------------------------------------------ #
-
-    def _handle_consent_response(
-        self, message: str, session: WellbeingSession
-    ) -> WellbeingChatResponse:
-        affirmative = {"yes", "y", "sure", "ok", "okay", "agree", "yeah", "yep", "absolutely"}
-        if message.strip().lower().split()[0] in affirmative if message.strip() else False:
-            session.consent_given = True
-            return WellbeingChatResponse(
-                response="Thank you. Everything stays private to this session. Let's talk 💙\n\nOn a scale of 1 to 10, how are you feeling right now? (1 = really struggling, 10 = great)",
-                session_id=session.id,
-                severity="LOW",
-                status="active",
-            )
-        else:
-            return WellbeingChatResponse(
-                response=(
-                    "That's completely okay. I'll operate without tracking anything this session. "
-                    "I'm still here to listen and support you. What's on your mind? 💙\n\n"
-                    "If you ever need crisis support: call or text **988** (Suicide & Crisis Lifeline) "
-                    "or text HOME to **741741** (Crisis Text Line)."
-                ),
-                session_id=session.id,
-                severity="LOW",
-                status="stateless",
-            )
 
     def _update_session_state(
         self, session: WellbeingSession, agent_data: AgentData | None, user_message: str

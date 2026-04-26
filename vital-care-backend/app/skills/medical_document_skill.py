@@ -38,26 +38,44 @@ class MedicalDocumentSkill:
             max_tokens=3000,
         )
 
-        try:
+        summary = raw.get("plain_language_summary", "")
+        if not summary:
+            logger.error("MedicalDocumentSkill: empty summary from LLM, raw=%s", raw)
             return DocumentExplainResponse(
-                plain_language_summary=raw.get("plain_language_summary", ""),
-                key_findings=[
-                    KeyFinding(**f) for f in raw.get("key_findings", [])
-                    if isinstance(f, dict)
-                ],
-                medical_terms=[
-                    MedicalTerm(**t) for t in raw.get("medical_terms", [])
-                    if isinstance(t, dict)
-                ],
-                questions_for_doctor=raw.get("questions_for_doctor", []),
-                urgency_flags=raw.get("urgency_flags", []),
-                disclaimer=raw.get(
-                    "disclaimer",
-                    "This explanation is for educational purposes only. Your healthcare provider should interpret your results."
-                ),
+                plain_language_summary="I was unable to interpret this document. Please try again or paste the text directly.",
             )
-        except Exception as e:
-            logger.error("MedicalDocumentSkill parse error: %s", e)
-            return DocumentExplainResponse(
-                plain_language_summary="Unable to process document at this time.",
-            )
+
+        _VALID_STATUS = {"normal", "high", "low", "unclear", "not_applicable"}
+
+        key_findings = []
+        for f in raw.get("key_findings", []):
+            if not isinstance(f, dict):
+                continue
+            status = f.get("normal_or_abnormal", "unclear")
+            if status not in _VALID_STATUS:
+                f["normal_or_abnormal"] = "unclear"
+            try:
+                key_findings.append(KeyFinding(**f))
+            except Exception as e:
+                logger.warning("Skipping invalid key_finding %s: %s", f, e)
+
+        medical_terms = []
+        for t in raw.get("medical_terms", []):
+            if not isinstance(t, dict):
+                continue
+            try:
+                medical_terms.append(MedicalTerm(**t))
+            except Exception as e:
+                logger.warning("Skipping invalid medical_term %s: %s", t, e)
+
+        return DocumentExplainResponse(
+            plain_language_summary=summary,
+            key_findings=key_findings,
+            medical_terms=medical_terms,
+            questions_for_doctor=raw.get("questions_for_doctor", []),
+            urgency_flags=raw.get("urgency_flags", []),
+            disclaimer=raw.get(
+                "disclaimer",
+                "This explanation is for educational purposes only. Your healthcare provider should interpret your results."
+            ),
+        )

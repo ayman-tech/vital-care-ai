@@ -21,7 +21,7 @@ Return a JSON object:
     {
       "finding": "name of test or finding",
       "simple_explanation": "what this means in plain language",
-      "normal_or_abnormal": "normal | high | low | unclear | not_applicable",
+      "normal_or_abnormal": "one of: normal, high, low, unclear, not_applicable",
       "why_it_matters": "brief educational note on why this finding is significant"
     }
   ],

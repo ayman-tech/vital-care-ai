@@ -101,7 +101,7 @@ class DiagnosisChatAgent:
                 message, user_context, location, intent, request.history
             )
         elif intent == "document_explanation":
-            response = await self._run_document_pipeline(message, user_context)
+            response = await self._run_document_pipeline(message, user_context, request.history)
         elif intent == "jargon_explanation":
             response = await self._run_jargon_pipeline(message)
         elif intent == "doctor_visit_prep":
@@ -215,10 +215,28 @@ class DiagnosisChatAgent:
 
         return "\n".join(l for l in lines if l is not None)
 
-    async def _run_document_pipeline(self, message: str, user_context) -> DiagnosisChatResponse:
-        result = await self.document_skill.run(message, user_context)
+    async def _run_document_pipeline(
+        self, message: str, user_context, history: list[dict] | None = None
+    ) -> DiagnosisChatResponse:
+        # Find the most recently uploaded document in conversation history
+        doc_text = None
+        doc_name = "document"
+        for entry in reversed(history or []):
+            if entry.get("role") == "user" and entry.get("content", "").startswith("[Uploaded document:"):
+                header, _, body = entry["content"].partition("\n\n")
+                doc_name = header.removeprefix("[Uploaded document:").rstrip("]").strip()
+                doc_text = body.strip()
+                break
+
+        if not doc_text:
+            return DiagnosisChatResponse(
+                response="I don't see any uploaded document in this session. Please upload a PDF, image, or text file first using the 📎 button, then ask me to explain it.",
+                intent="document_explanation",
+            )
+
+        result = await self.document_skill.run(doc_text, user_context)
         return DiagnosisChatResponse(
-            response=result.plain_language_summary or "I wasn't able to process that document.",
+            response=result.plain_language_summary or f"I wasn't able to process **{doc_name}**.",
             intent="document_explanation",
         )
 
